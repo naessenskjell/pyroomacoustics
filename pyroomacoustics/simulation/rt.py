@@ -154,8 +154,9 @@ def compute_rt_rir(
         rir_bands[b] = seq_bp
 
     if air_abs_coeffs is not None:
-        if rir_bands.shape[0] == 1:
+        if rir_bands.shape[0] == 1 and len(air_abs_coeffs) > 1:
             # do the octave band analysis if it was not done in the first step
+            # (not needed for a single broadband coefficient, ASF)
             rir_bands = np.array(
                 [
                     octave_bands.analysis(rir_bands[0], band=b)

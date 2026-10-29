@@ -83,6 +83,9 @@ _constants_default = {
     "octave_bands_base_freq": 125.0,
     "octave_bands_keep_dc": False,
     "resample_backend": "soxr",
+    # ASF (ultrasonic): broadband air absorption instead of the octave-band one
+    "asf_fast_air_abs": False,  # use a single broadband air absorption coefficient
+    "asf_air_abs_coeff": 0.0875,  # broadband air absorption coefficient (1/m)
 }
 
 
