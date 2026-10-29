@@ -16,3 +16,4 @@ pyroomacoustics.egg-info/
 pyroomacoustics/build_rir.c
 pyroomacoustics/**/*.so
 pyroomacoustics/directivities/tests/data/*.pdf
+pyroomacoustics/**/*.pyd
