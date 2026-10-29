@@ -79,6 +79,9 @@ _constants_default = {
     "room_isinside_max_iter": 20,  # Max iterations for checking if point is inside room
     "sinc_lut_granularity": 20,  # num. points in integer interval in the sinc interp. LUT
     "num_threads": get_num_threads(),  # num. of threads to use
+    # ASF (ultrasonic): broadband air absorption instead of the octave-band one
+    "asf_fast_air_abs": False,  # use a single broadband air absorption coefficient
+    "asf_air_abs_coeff": 0.0875,  # broadband air absorption coefficient (1/m)
 }
 
 

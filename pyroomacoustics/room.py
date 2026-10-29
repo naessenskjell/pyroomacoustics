@@ -749,6 +749,25 @@ def sequence_generation(volume, duration, c, fs, max_rate=10000):
     return seq
 
 
+# cache for the ASF broadband air absorption decay, built on first use
+_asf_air_decay_cache = {"key": None, "decay": np.zeros(0)}
+
+
+def _asf_air_decay(n, fs, c):
+    """
+    Broadband air absorption decay ``exp(-0.5 * a * d)`` for the first ``n``
+    samples, with ``a`` the ``asf_air_abs_coeff`` constant and ``d`` the
+    distance travelled. The array is cached and only grows when needed.
+    """
+    key = (fs, c, constants.get("asf_air_abs_coeff"))
+    cache = _asf_air_decay_cache
+    if cache["key"] != key or len(cache["decay"]) < n:
+        distance = np.arange(n) / fs * c
+        cache["decay"] = np.exp(-0.5 * key[2] * distance)
+        cache["key"] = key
+    return cache["decay"][:n]
+
+
 def find_non_convex_walls(walls):
     """
     Finds the walls that are not in the convex hull
@@ -2376,7 +2395,19 @@ class Room(object):
                     rir_bands.append(ir_loc)
 
                 # Do Air absorption
-                if self.simulator_state["air_abs_needed"]:
+                if self.simulator_state["air_abs_needed"] and constants.get(
+                    "asf_fast_air_abs"
+                ):
+                    # ASF: one broadband coefficient, without the octave-band
+                    # filtering (slow at ultrasonic sampling rates). As in the
+                    # original ASF patch, multi-band RIRs are left unchanged.
+                    if len(rir_bands) == 1:
+                        n_decay = N + fdl2 + 1
+                        rir_bands[0][fdl2 : fdl2 + n_decay] *= _asf_air_decay(
+                            n_decay, self.fs, self.c
+                        )
+
+                elif self.simulator_state["air_abs_needed"]:
                     # In case this was not multi-band, do the band pass filtering
                     if len(rir_bands) == 1:
                         rir_bands = self.octave_bands.analysis(rir_bands[0]).T
