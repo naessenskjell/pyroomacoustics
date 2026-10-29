@@ -2288,6 +2288,19 @@ class Room(object):
 
         volume_room = self.get_volume()
 
+        air_abs_coeffs = self.air_absorption
+        if self.simulator_state["air_abs_needed"] and constants.get(
+            "asf_fast_air_abs"
+        ):
+            # ASF (ultrasonic): one broadband coefficient, without the
+            # octave-band filtering (slow at ultrasonic sampling rates). As in
+            # the original ASF patch, multi-band rooms get no air absorption.
+            air_abs_coeffs = (
+                None
+                if self.is_multi_band
+                else np.array([constants.get("asf_air_abs_coeff")])
+            )
+
         # Loop over ever microphone present in the room and then for each
         # microphone and source pair present in the room
         for m, mic in enumerate(self.mic_array.R.T):
@@ -2315,7 +2328,7 @@ class Room(object):
                         self.fs,
                         self.octave_bands,
                         min_phase=self.min_phase,
-                        air_abs_coeffs=self.air_absorption,
+                        air_abs_coeffs=air_abs_coeffs,
                     )
                     rir_parts.append(ir_ism)
 
@@ -2332,7 +2345,7 @@ class Room(object):
                         self.c,
                         self.fs,
                         self.octave_bands,
-                        air_abs_coeffs=self.air_absorption,
+                        air_abs_coeffs=air_abs_coeffs,
                     )
                     rir_parts.append(ir_rt)
 
