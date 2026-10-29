@@ -192,6 +192,9 @@ _constants_default = {
     "rir_hpf_enable": True,
     "rir_hpf_fc": 10.0,
     "rir_hpf_kwargs": {"n": 2, "rp": 5.0, "rs": 60.0, "type": "butter"},
+    # ASF (ultrasonic): broadband air absorption instead of the octave-band one
+    "asf_fast_air_abs": False,  # use a single broadband air absorption coefficient
+    "asf_air_abs_coeff": 0.0875,  # broadband air absorption coefficient (1/m)
 }
 
 
