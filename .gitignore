@@ -15,3 +15,8 @@ local_examples/
 pyroomacoustics.egg-info/
 pyroomacoustics/build_rir.c
 pyroomacoustics/**/*.so
+
+# files added after editable install (pip install -e . )
+pyroomacoustics.egg-info/
+pyroomacoustics/build_rir.c
+pyroomacoustics/**/*.pyd
