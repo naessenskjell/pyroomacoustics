@@ -196,6 +196,7 @@ _constants_default = {
     # ASF (ultrasonic): broadband air absorption instead of the octave-band one
     "asf_fast_air_abs": False,  # use a single broadband air absorption coefficient
     "asf_air_abs_coeff": 0.0875,  # broadband air absorption coefficient (1/m)
+    "asf_fast_octave_bands": False,  # faster, equivalent multi-band ISM RIR construction
 }
 
 

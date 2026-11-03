@@ -37,6 +37,44 @@ from ..parameters import constants
 from ..utilities import angle_function
 
 
+def _fast_octave_bands_rir(time, oct_band_amplitude, N, fs, fdl, octave_bands):
+    """
+    ASF: same result as the band loop in compute_ism_rir (to float precision),
+    but faster at high sampling rates.
+
+    - Bands with identical amplitudes give identical band RIRs, so each distinct
+      amplitude row is built once. Material coefficients stop at 8 kHz, so at
+      ultrasonic sampling rates most bands are identical.
+    - Analysis followed by synthesis of the Antoni filter bank equals filtering
+      by the squared band window, so the bands are filtered and summed in the
+      frequency domain with a single inverse FFT.
+    """
+    unique_amps, groups = np.unique(oct_band_amplitude, axis=0, return_inverse=True)
+    groups = groups.ravel()
+
+    # same FFT size as octave_bands.analysis (oversampling 2)
+    n_fft = 2 ** math.ceil(math.log2(2 * N))
+    weights = octave_bands.band_weights(n_fft)
+
+    time = time.astype(np.float32)
+    X_sum = np.zeros(n_fft // 2 + 1, dtype=np.complex128)
+    ir_loc = np.zeros(N, dtype=np.float32)
+    for u, amp in enumerate(unique_amps):
+        ir_loc[:] = 0.0
+        libroom.rir_builder(
+            ir_loc,
+            time,
+            amp.astype(np.float32),
+            fs,
+            fdl,
+            constants.get("sinc_lut_granularity"),
+            constants.get("num_threads"),
+        )
+        X_sum += weights[groups == u].sum(axis=0) * np.fft.rfft(ir_loc, n=n_fft)
+
+    return np.fft.irfft(X_sum, n=n_fft)[:N].astype(np.float32)
+
+
 def multi_convolve(*signals):
     max_len = signals[0].shape[-1]
     shape = signals[0].shape[:-1]
@@ -258,6 +296,11 @@ def compute_ism_rir(
         N = int(math.ceil(t_max * fs + fdl2 + 1)) + 1
 
         n_bands = oct_band_amplitude.shape[0]
+        if n_bands > 1 and constants.get("asf_fast_octave_bands"):
+            return _fast_octave_bands_rir(
+                time, oct_band_amplitude, N, fs, fdl, octave_bands
+            )
+
         rir = np.zeros(N, dtype=np.float32)  # ir for every band
         for b in range(n_bands):  # Loop through every band
             ir_loc = np.zeros(N, dtype=np.float32)  # ir for every band

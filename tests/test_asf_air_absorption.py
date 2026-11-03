@@ -50,6 +50,30 @@ def test_asf_air_abs_stays_single_band():
     assert corr == pytest.approx(1.0, abs=1e-6)
 
 
+@pytest.mark.parametrize("materials", ["wood_techtile", "panel_fabric_covered_6pcf"])
+def test_asf_fast_octave_bands_equivalent(materials):
+    # the fast multi-band RIR construction equals the upstream band loop
+    rirs = []
+    for fast in (False, True):
+        pra.constants.set("asf_fast_octave_bands", fast)
+        try:
+            room = pra.ShoeBox(
+                room_dim,
+                fs=fs,
+                materials=pra.Material(materials),
+                max_order=3,
+            )
+            room.add_source(src)
+            room.add_microphone(mic)
+            room.compute_rir()
+            rirs.append(room.rir[0][0])
+        finally:
+            pra.constants.set("asf_fast_octave_bands", False)
+    assert len(rirs[0]) == len(rirs[1])
+    err = np.linalg.norm(rirs[1] - rirs[0]) / np.linalg.norm(rirs[0])
+    assert err < 1e-6
+
+
 def test_asf_air_abs_multi_band_unchanged():
     # as in the original ASF patch, multi-band rooms get no air absorption
     materials = pra.Material("wood_techtile")

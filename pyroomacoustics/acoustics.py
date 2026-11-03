@@ -628,6 +628,19 @@ class AntoniOctaveFilterBank(BaseOctaveFilterBank):
         ratio = diff / diff.sum()
         return ratio * self.fs / 2.0
 
+    def band_weights(self, n_fft):
+        """
+        Squared band windows ``G_b(k) ** 2``, shape ``(n_bands, n_fft // 2 + 1)``,
+        cached per FFT size. For ``x`` of length ``n`` and
+        ``n_fft = 2 ** ceil(log2(2 * n))``, ``analysis(x, band=b)`` is equal (to
+        float precision) to ``irfft(band_weights(n_fft)[b] * rfft(x, n_fft))[:n]``.
+        """
+        cache = self.__dict__.setdefault("_band_weights_cache", {})
+        if n_fft not in cache:
+            G, n_freq, *_ = self._make_window_function(n_fft)
+            cache[n_fft] = G[:, :n_freq] ** 2
+        return cache[n_fft]
+
     def _make_window_function(self, n_fft) -> np.ndarray:
         """
         Implementation adapted from
